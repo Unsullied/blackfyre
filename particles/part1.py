@@ -1,0 +1,172 @@
+from OpenGL.GL import *
+from OpenGL.GLU import *
+from OpenGL.GLUT import *
+from random import randint
+import sys
+
+global texture
+texture = []
+global width
+global height
+width = 1000
+height = 600
+global ParticleCount
+ParticleCount = 500
+
+class PARTICLES(object):
+    Xpos = 0
+    Ypos = -5
+    Zpos = -5
+    Xmov = 0
+    Zmov = 0
+    Red = 1
+    Green = 1
+    Blue = 1
+    Scalez = 0.25
+    Direction = 0
+    Acceleration = 0
+    Deceleration = 0.0025
+global particle
+particle = []
+
+def square():
+    glBindTexture(GL_TEXTURE_2D, texture[0])
+    glBegin(GL_QUADS)
+    glTexCoord2d(0.0,0.0) 
+    glVertex2d(-1.0,-1.0)
+    glTexCoord2d(1.0,0.0) 
+    glVertex2d(1.0,-1.0)
+    glTexCoord2d(1.0,1.0) 
+    glVertex2d(1.0,1.0)
+    glTexCoord2d(0.0,1.0) 
+    glVertex2d(-1.0,1.0)
+    glEnd()
+
+def glCreateParticles():
+    global particle
+    for i in range(ParticleCount):
+        particle.append(PARTICLES())
+        particle[i].Xmov = ((((((2 - 1 + 1) * randint(0,10) + 1) - 1 + 1) * randint(0,10)) + 1) * 0.005) - ((((((2 - 1 + 1) * randint(0,10) + 1) - 1 + 1) * randint(0,10)) + 1) * 0.005)
+        particle[i].Zmov = ((((((2 - 1 + 1) * randint(0,10) + 1) - 1 + 1) * randint(0,10)) + 1) * 0.005) - ((((((2 - 1 + 1) * randint(0,10) + 1) - 1 + 1) * randint(0,10)) + 1) * 0.005)
+        particle[i].acceleration = ((((((8 - 5 + 2) * randint(0,10)) + 5) - 1 + 1) * randint(0,10)) + 1) * 0.02
+
+def glUpdateParticles():
+    global particle
+    for i in range(ParticleCount):
+        glColor3f (particle[i].Red, particle[i].Green, particle[i].Blue)
+        particle[i].Ypos = particle[i].Ypos + particle[i].Acceleration - particle[i].Deceleration
+        particle[i].Deceleration = particle[i].Deceleration +0.0025
+        particle[i].Xpos = particle[i].Xpos + particle[i].Xmov
+        particle[i].Zpos = particle[i].Zpos + particle[i].Zmov
+        particle[i].Direction = particle[i].Direction + ((((((int)(0.5 - 0.1 + 0.1) * randint(0,10)) + 1) - 1 + 1) * randint(0,10)) + 1)
+        if (particle[i].Ypos < -5):
+            particle[i].Xpos = 0
+            particle[i].Ypos = -5
+            particle[i].Zpos = -5
+            particle[i].Red = 1
+            particle[i].Green = 1
+            particle[i].Blue = 1
+            particle[i].Direction = 0
+            particle[i].Acceleration = ((((((8 - 5 + 2) * randint(0,10)) + 5) - 1 + 1) * randint(0,10)) + 1) * 0.02
+            particle[i].Deceleration = 0.0025
+                                                    
+def glDrawParticles():
+    global particle
+    global texture
+    for i in range(ParticleCount):
+        glPushMatrix()
+        glTranslatef (particle[i].Xpos, particle[i].Ypos, particle[i].Zpos)
+        glRotatef (particle[i].Direction - 90, 0, 0, 1)
+        glScalef (particle[i].Scalez, particle[i].Scalez, particle[i].Scalez)
+        glDisable (GL_DEPTH_TEST)
+        glEnable (GL_BLEND)
+        
+        glBlendFunc (GL_DST_COLOR, GL_ZERO)
+        glBindTexture (GL_TEXTURE_2D, texture[0])
+
+        glBegin (GL_QUADS)
+        glTexCoord2d (0, 0)
+        glVertex3f (-1, -1, 0)
+        glTexCoord2d (1, 0)
+        glVertex3f (1, -1, 0)
+        glTexCoord2d (1, 1)
+        glVertex3f (1, 1, 0)
+        glTexCoord2d (0, 1)
+        glVertex3f (-1, 1, 0)
+        glEnd()
+    
+        glBlendFunc (GL_ONE, GL_ONE)
+        glBindTexture (GL_TEXTURE_2D, texture[1])
+        glBegin (GL_QUADS)
+        glTexCoord2d (0, 0)
+        glVertex3f (-1, -1, 0)
+        glTexCoord2d (1, 0)
+        glVertex3f (1, -1, 0)
+        glTexCoord2d (1, 1)
+        glVertex3f (1, 1, 0)
+        glTexCoord2d (0, 1)
+        glVertex3f (-1, 1, 0)
+        glEnd()
+        glEnable(GL_DEPTH_TEST)
+        glPopMatrix()
+
+def display():
+    glClearDepth (1)
+    glClearColor (0.0,0.0,0.0,1.0)
+    glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    glLoadIdentity()
+    glTranslatef (0,0,-10)
+    glUpdateParticles()
+    glDrawParticles()
+    glutSwapBuffers()
+
+def LoadTextureRAW(filename, width, height):
+    file = open(filename, "r")
+    data = file.read(width*height*3)
+    file.close()
+    tex = glGenTextures(1)
+    print type(tex)
+    glBindTexture(GL_TEXTURE_2D, tex)
+    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+    glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE,GL_MODULATE )
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_NEAREST )
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,GL_LINEAR )
+    gluBuild2DMipmaps(GL_TEXTURE_2D, 3, width, height, GL_RGB, GL_UNSIGNED_BYTE, data)
+    del( data )
+    return tex
+
+def FreeTexture(tex):
+    glDeleteTextures(1,tex)
+
+def init():
+    global texture
+    glEnable(GL_TEXTURE_2D)
+    glEnable(GL_DEPTH_TEST)
+    glCreateParticles()
+    texture.append(LoadTextureRAW( "particle_mask.raw",256,256))
+    texture.append(LoadTextureRAW( "particle.raw",256,256))              
+
+def reshape(w, h):
+    glViewport (0, 0, w, h)
+    glMatrixMode (GL_PROJECTION)
+    glLoadIdentity ()
+    gluPerspective (60, w/h, 1.0, 100.0)
+    glMatrixMode (GL_MODELVIEW)
+
+def main():
+    global width
+    global height
+# Setup for double-buffered display and depth testing
+    glutInitDisplayMode(GLUT_RGB|GLUT_DOUBLE|GLUT_DEPTH)
+    glutInitWindowPosition(100,100)
+    glutInitWindowSize(width,height)
+    glutInit(sys.argv)
+    glutCreateWindow("Blah")
+    init()
+    glutReshapeFunc(reshape)
+    glutMainLoop()
+
+main()
+                 
+
